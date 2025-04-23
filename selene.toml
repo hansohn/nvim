@@ -1,5 +1,10 @@
 # https://github.com/Kampfkarren/selene/issues/284
 # std = "lua54+vim"
+#
+#[rules]
+#mixed_table = "allow"
+#
+std = "vim"
 
-[rules]
+[lints]
 mixed_table = "allow"
