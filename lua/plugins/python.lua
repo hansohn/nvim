@@ -1,47 +1,42 @@
 return {
   {
-    "mfussenegger/nvim-dap-python",
+    "mfussenegger/nvim-dap",
+    dependencies = {
+      { "nvim-neotest/nvim-nio" },
+      { "rcarriga/nvim-dap-ui" },
+      { "mfussenegger/nvim-dap-python" },
+      { "theHamsta/nvim-dap-virtual-text" },
+    },
     config = function()
-      require("dap-python").setup(vim.g.python3_host_prog)
-      require("dap-python").test_runner = "pytest"
+      local dap = require("dap")
+      local dapui = require("dapui")
+      local dap_python = require("dap-python")
+
+      require("dapui").setup({})
+      require("nvim-dap-virtual-text").setup({
+        commented = true,
+      })
+
+      -- Python configuration
+      dap_python.setup("~/.pyenv/versions/py3nvim/bin/python")
+      dap_python.test_runner = "pytest"
+
+      -- Automatically open/close the UI
+      dap.listeners.before.attach.dapui_config = function()
+        dapui.open()
+      end
+
+      dap.listeners.before.launch.dapui_config = function()
+        dapui.open()
+      end
+
+      dap.listeners.before.event_terminated.dapui_config = function()
+        dapui.close()
+      end
+
+      dap.listeners.before.event_exited.dapui_config = function()
+        dapui.close()
+      end
     end,
   },
-
-  -- {
-  --   'linux-cultist/venv-selector.nvim',
-  --   event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
-  --   dependencies = {
-  --     'neovim/nvim-lspconfig',
-  --     'nvim-telescope/telescope.nvim',
-  --     'mfussenegger/nvim-dap-python'
-  --   },
-  --   opts = {
-  --     -- Your options go here
-  --     -- name = "venv",
-  --     -- auto_refresh = false
-  --   },
-  --   keys = {
-  --     -- Keymap to open VenvSelector to pick a venv.
-  --     { '<leader>vs', '<cmd>VenvSelect<cr>' },
-  --     -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
-  --     { '<leader>vc', '<cmd>VenvSelectCached<cr>' },
-  --   },
-  -- },
-
-  -- {
-  --   "linux-cultist/venv-selector.nvim",
-  --     dependencies = {
-  --       "neovim/nvim-lspconfig",
-  --       "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
-  --       { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
-  --     },
-  --   lazy = false,
-  --   branch = "regexp", -- This is the regexp branch, use this for the new version
-  --   config = function()
-  --       require("venv-selector").setup()
-  --     end,
-  --     keys = {
-  --       { ",v", "<cmd>VenvSelect<cr>" },
-  --     },
-  -- },
 }

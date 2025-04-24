@@ -1,281 +1,289 @@
 return {
   {
-    "stevearc/conform.nvim",
-    dependencies = { "mason.nvim" },
-    lazy = true,
-    cmd = "ConformInfo",
-    keys = {
+    "saghen/blink.cmp",
+    version = not vim.g.lazyvim_blink_main and "*",
+    build = vim.g.lazyvim_blink_main and "cargo build --release",
+    opts_extend = {
+      "sources.completion.enabled_providers",
+      "sources.compat",
+      "sources.default",
+    },
+    dependencies = {
+      "rafamadriz/friendly-snippets",
+      -- add blink.compat to dependencies
       {
-        "<leader>cF",
-        function()
-          require("conform").format({ formatters = { "injected" }, timeout_ms = 3000 })
-        end,
-        mode = { "n", "v" },
-        desc = "Format Injected Langs",
+        "saghen/blink.compat",
+        optional = true, -- make optional so it's only enabled if any extras need it
+        opts = {},
+        version = not vim.g.lazyvim_blink_main and "*",
       },
     },
-    init = function()
-      -- Install the conform formatter on VeryLazy
-      LazyVim.on_very_lazy(function()
-        LazyVim.format.register({
-          name = "conform.nvim",
-          priority = 100,
-          primary = true,
-          format = function(buf)
-            require("conform").format({ bufnr = buf })
-          end,
-          sources = function(buf)
-            local ret = require("conform").list_formatters(buf)
-            ---@param v conform.FormatterInfo
-            return vim.tbl_map(function(v)
-              return v.name
-            end, ret)
-          end,
-        })
-      end)
+    event = "InsertEnter",
+
+    ---@module 'blink.cmp'
+    ---@type blink.cmp.Config
+    opts = {
+      snippets = {
+        expand = function(snippet, _)
+          return LazyVim.cmp.expand(snippet)
+        end,
+      },
+      appearance = {
+        -- sets the fallback highlight groups to nvim-cmp's highlight groups
+        -- useful for when your theme doesn't support blink.cmp
+        -- will be removed in a future release, assuming themes add support
+        use_nvim_cmp_as_default = false,
+        -- set to 'mono' for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
+        -- adjusts spacing to ensure icons are aligned
+        nerd_font_variant = "mono",
+      },
+      completion = {
+        accept = {
+          -- experimental auto-brackets support
+          auto_brackets = {
+            enabled = true,
+          },
+        },
+        menu = {
+          draw = {
+            treesitter = { "lsp" },
+          },
+        },
+        documentation = {
+          auto_show = true,
+          auto_show_delay_ms = 200,
+        },
+        ghost_text = {
+          enabled = vim.g.ai_cmp,
+        },
+      },
+
+      -- experimental signature help support
+      -- signature = { enabled = true },
+
+      sources = {
+        -- adding any nvim-cmp sources here will enable them
+        -- with blink.compat
+        compat = {},
+        default = { "lsp", "path", "snippets", "buffer" },
+      },
+
+      cmdline = {
+        enabled = false,
+      },
+
+      keymap = {
+        preset = "enter",
+        ["<C-y>"] = { "select_and_accept" },
+      },
+    },
+    ---@param opts blink.cmp.Config | { sources: { compat: string[] } }
+    config = function(_, opts)
+      -- setup compat sources
+      local enabled = opts.sources.default
+      for _, source in ipairs(opts.sources.compat or {}) do
+        opts.sources.providers[source] = vim.tbl_deep_extend(
+          "force",
+          { name = source, module = "blink.compat.source" },
+          opts.sources.providers[source] or {}
+        )
+        if type(enabled) == "table" and not vim.tbl_contains(enabled, source) then
+          table.insert(enabled, source)
+        end
+      end
+
+      -- add ai_accept to <Tab> key
+      if not opts.keymap["<Tab>"] then
+        if opts.keymap.preset == "super-tab" then -- super-tab
+          opts.keymap["<Tab>"] = {
+            require("blink.cmp.keymap.presets")["super-tab"]["<Tab>"][1],
+            LazyVim.cmp.map({ "snippet_forward", "ai_accept" }),
+            "fallback",
+          }
+        else -- other presets
+          opts.keymap["<Tab>"] = {
+            LazyVim.cmp.map({ "snippet_forward", "ai_accept" }),
+            "fallback",
+          }
+        end
+      end
+
+      -- Unset custom prop to pass blink.cmp validation
+      opts.sources.compat = nil
+
+      -- check if we need to override symbol kinds
+      for _, provider in pairs(opts.sources.providers or {}) do
+        ---@cast provider blink.cmp.SourceProviderConfig|{kind?:string}
+        if provider.kind then
+          local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
+          local kind_idx = #CompletionItemKind + 1
+
+          CompletionItemKind[kind_idx] = provider.kind
+          ---@diagnostic disable-next-line: no-unknown
+          CompletionItemKind[provider.kind] = kind_idx
+
+          ---@type fun(ctx: blink.cmp.Context, items: blink.cmp.CompletionItem[]): blink.cmp.CompletionItem[]
+          local transform_items = provider.transform_items
+          ---@param ctx blink.cmp.Context
+          ---@param items blink.cmp.CompletionItem[]
+          provider.transform_items = function(ctx, items)
+            items = transform_items and transform_items(ctx, items) or items
+            for _, item in ipairs(items) do
+              item.kind = kind_idx or item.kind
+              item.kind_icon = LazyVim.config.icons.kinds[item.kind_name] or item.kind_icon or nil
+            end
+            return items
+          end
+
+          -- Unset custom prop to pass blink.cmp validation
+          provider.kind = nil
+        end
+      end
+
+      require("blink.cmp").setup(opts)
     end,
-    opts = function()
-      -- local plugin = require("lazy.core.config").plugins["conform.nvim"]
-      -- if plugin.config ~= M.setup then
-      --   LazyVim.error({
-      --     "Don't set `plugin.config` for `conform.nvim`.\n",
-      --     "This will break **LazyVim** formatting.\n",
-      --     "Please refer to the docs at https://www.lazyvim.org/plugins/formatting",
-      --   }, { title = "LazyVim" })
-      -- end
-      ---@type conform.setupOpts
-      local opts = {
-        default_format_opts = {
-          timeout_ms = 3000,
-          async = false, -- not recommended to change
-          quiet = false, -- not recommended to change
-          lsp_format = "fallback", -- not recommended to change
-        },
-        formatters_by_ft = {
-          go = { "goimports", "gofmt" },
-          javascript = { "prettier" },
-          json = { "prettier" },
-          lua = { "stylua" },
-          markdown = { "prettier", "markdownlint-cli2" },
-          python = { "isort", "ruff_format" },
-          sh = { "shfmt" },
-          terraform = { "terraform_fmt" },
-          ["terraform-vars"] = { "terraform_fmt" },
-          toml = { "taplo" },
-          typst = { "typstfmt" },
-          yaml = { "yamlfmt" },
-        },
-        -- The options you set here will be merged with the builtin formatters.
-        -- You can also define any custom formatters here.
-        ---@type table<string, conform.FormatterConfigOverride|fun(bufnr: integer): nil|conform.FormatterConfigOverride>
-        formatters = {
-          injected = { options = { ignore_errors = true } },
-          -- # Example of using dprint only when a dprint.json file is present
-          -- dprint = {
-          --   condition = function(ctx)
-          --     return vim.fs.find({ "dprint.json" }, { path = ctx.filename, upward = true })[1]
-          --   end,
-          -- },
-          --
-          -- # Example of using shfmt with extra args
-          -- shfmt = {
-          --   prepend_args = { "-i", "2", "-ci" },
-          -- },
-        },
-      }
-      return opts
-    end,
-    -- config = M.setup,
   },
 
-  -- {
-  --   "stevearc/conform.nvim",
-  --   event = { "BufReadPre", "BufNewFile", "InsertLeave" },
-  --   opts = {
-  --     format_on_save = function()
-  --       -- Disable with a global variable
-  --       if not vim.g.autoformat then
-  --         return
-  --       end
-  --       return { async = false, timeout_ms = 500, lsp_fallback = false }
-  --     end,
-  --     -- log_level = vim.log.levels.TRACE,
-  --     formatters_by_ft = {
-  --       go = { "goimports", "gofmt" },
-  --       javascript = { "prettier" },
-  --       json = { "prettier" },
-  --       lua = { "stylua" },
-  --       markdown = { "prettier", "markdownlint-cli2" },
-  --       python = { "isort", "ruff_format" },
-  --       sh = { "shfmt" },
-  --       terraform = { "terraform_fmt" },
-  --       ["terraform-vars"] = { "terraform_fmt" },
-  --       tex = { "latexindent" },
-  --       toml = { "taplo" },
-  --       typst = { "typstfmt" },
-  --       yaml = { "yamlfmt" },
-  --     },
-  --   },
-  --   config = function(_, opts)
-  --     local conform = require("conform")
-  --     conform.setup(opts)
-  --     conform.formatters.shfmt = {
-  --       prepend_args = { "-i", "2" }, -- 2 spaces instead of tab
-  --     }
-  --     conform.formatters.stylua = {
-  --       prepend_args = { "--indent-type", "Spaces", "--indent-width", "2" }, -- 2 spaces instead of tab
-  --     }
-  --     conform.formatters.yamlfmt = {
-  --       prepend_args = { "-formatter", "indent=2,include_document_start=true,retain_line_breaks_single=true" },
-  --     }
-  --     vim.g.autoformat = vim.g.autoformat
-  --     vim.api.nvim_create_user_command("ToggleAutoformat", function()
-  --       vim.api.nvim_notify("Toggling autoformat", vim.log.levels.INFO, { title = "conform.nvim", timeout = 2000 })
-  --       vim.g.autoformat = vim.g.autoformat == false and true or false
-  --     end, { desc = "Toggling autoformat" })
-  --     vim.keymap.set("n", "<leader>tF", "<cmd>ToggleAutoformat<cr>", { desc = "Toggle format on save" })
-  --   end,
-  -- },
+  {
+    "stevearc/conform.nvim",
+    event = { "BufWritePre" },
+    cmd = { "ConformInfo" },
+    keys = {
+      {
+        -- Customize or remove this keymap to your liking
+        "<leader>cF",
+        function()
+          require("conform").format({ async = true })
+        end,
+        mode = "",
+        desc = "Format buffer",
+      },
+    },
+    -- This will provide type hinting with LuaLS
+    ---@module "conform"
+    ---@type conform.setupOpts
+    opts = {
+      default_format_opts = {
+        timeout_ms = 3000,
+        async = false, -- not recommended to change
+        quiet = false, -- not recommended to change
+        lsp_format = "fallback", -- not recommended to change
+      },
+      formatters_by_ft = {
+        go = { "goimports", "gofumpt" },
+        hcl = { "packer_fmt" },
+        javascript = { "prettierd", "prettier", stop_after_first = true },
+        json = { "prettier" },
+        lua = { "stylua" },
+        ["markdown"] = { "prettier", "markdownlint-cli2", "markdown-toc" },
+        ["markdown.mdx"] = { "prettier", "markdownlint-cli2", "markdown-toc" },
+        python = { "isort", "black" },
+        rust = { "rustfmt", lsp_format = "fallback" },
+        sh = { "shfmt" },
+        terraform = { "terraform_fmt" },
+        tf = { "terraform_fmt" },
+        ["terraform-vars"] = { "terraform_fmt" },
+        toml = { "taplo" },
+        yaml = { "yamlfmt" },
+      },
+      -- The options you set here will be merged with the builtin formatters.
+      -- You can also define any custom formatters here.
+      ---@type table<string, conform.FormatterConfigOverride|fun(bufnr: integer): nil|conform.FormatterConfigOverride>
+      formatters = {
+        injected = { options = { ignore_errors = true } },
+        ["markdown-toc"] = {
+          condition = function(_, ctx)
+            for _, line in ipairs(vim.api.nvim_buf_get_lines(ctx.buf, 0, -1, false)) do
+              if line:find("<!%-%- toc %-%->") then
+                return true
+              end
+            end
+          end,
+        },
+        ["markdownlint-cli2"] = {
+          condition = function(_, ctx)
+            local diag = vim.tbl_filter(function(d)
+              return d.source == "markdownlint"
+            end, vim.diagnostic.get(ctx.buf))
+            return #diag > 0
+          end,
+        },
+      },
+    },
+  },
 
   {
     "folke/flash.nvim",
+    event = "VeryLazy",
+    ---@type Flash.Config
     opts = {},
+    -- stylua: ignore
     keys = {
-      {
-        "ss",
-        mode = { "n", "x", "o" },
-        -- Jump to any word
-        function()
-          ---@diagnostic disable: missing-fields
-          require("flash").jump({
-            pattern = ".", -- initialize pattern with any char
-            search = {
-              mode = function(pattern)
-                -- remove leading dot
-                if pattern:sub(1, 1) == "." then
-                  pattern = pattern:sub(2)
-                end
-                -- return word pattern and proper skip pattern
-                return ([[\<%s\w*\>]]):format(pattern), ([[\<%s]]):format(pattern)
-              end,
-            },
-          })
-        end,
-        desc = "Flash",
-      },
-      {
-        "S",
-        mode = { "n", "o", "x" },
-        function()
-          require("flash").treesitter()
-        end,
-        desc = "Flash Treesitter",
-      },
-      {
-        "r",
-        mode = "o",
-        function()
-          require("flash").remote()
-        end,
-        desc = "Remote Flash",
-      },
+      { "s", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
+      { "S", mode = { "n", "x", "o" }, function() require("flash").treesitter() end, desc = "Flash Treesitter" },
+      { "r", mode = "o", function() require("flash").remote() end, desc = "Remote Flash" },
+      { "R", mode = { "o", "x" }, function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+      { "<c-s>", mode = { "c" }, function() require("flash").toggle() end, desc = "Toggle Flash Search" },
     },
   },
 
   {
     "echasnovski/mini.surround",
-    event = { "BufReadPre", "BufNewFile" },
+    keys = function(_, keys)
+      -- Populate the keys based on the user's options
+      local opts = LazyVim.opts("mini.surround")
+      local mappings = {
+        { opts.mappings.add, desc = "Add Surrounding", mode = { "n", "v" } },
+        { opts.mappings.delete, desc = "Delete Surrounding" },
+        { opts.mappings.find, desc = "Find Right Surrounding" },
+        { opts.mappings.find_left, desc = "Find Left Surrounding" },
+        { opts.mappings.highlight, desc = "Highlight Surrounding" },
+        { opts.mappings.replace, desc = "Replace Surrounding" },
+        { opts.mappings.update_n_lines, desc = "Update `MiniSurround.config.n_lines`" },
+      }
+      mappings = vim.tbl_filter(function(m)
+        return m[1] and #m[1] > 0
+      end, mappings)
+      return vim.list_extend(mappings, keys)
+    end,
     opts = {
-      -- Number of lines within which surrounding is searched
-      n_lines = 50,
+      mappings = {
+        add = "gsa", -- Add surrounding in Normal and Visual modes
+        delete = "gsd", -- Delete surrounding
+        find = "gsf", -- Find surrounding (to the right)
+        find_left = "gsF", -- Find surrounding (to the left)
+        highlight = "gsh", -- Highlight surrounding
+        replace = "gsr", -- Replace surrounding
+        update_n_lines = "gsn", -- Update `n_lines`
+      },
     },
   },
 
   {
     "gbprod/substitute.nvim",
-    keys = {
-    -- stylua: ignore start
-    { "s", function() require("substitute").operator() end, desc = "Substitute", },
-    { "s", mode = "x", function() require("substitute").visual() end, desc = "Substitute", },
-      -- stylua: ignore end
-    },
     opts = {},
-  },
-
-  {
-    {
-      "folke/todo-comments.nvim",
-      event = "BufReadPre", -- needed to highlight keywords
-      dependencies = { "nvim-lua/plenary.nvim" },
-      opts = {},
-      keys = {
-        {
-          "<leader>sT",
-          function()
-            require("todo-comments.fzf").todo()
-          end,
-          desc = "TODOs",
-        },
+    keys = {
+      {
+        "s",
+        function()
+          require("substitute").operator()
+        end,
+        desc = "Substitute",
+      },
+      {
+        "s",
+        mode = "x",
+        function()
+          require("substitute").visual()
+        end,
+        desc = "Substitute",
       },
     },
   },
 
   {
-    "allaman/emoji.nvim",
-    ft = "markdown",
-    opts = {
-      enable_cmp_integration = true,
-    },
-  },
-
-  -- emoji blink.cmp integration
-  {
-    "saghen/blink.cmp",
-    build = "cargo build --release",
-    version = "*",
-    dependencies = { "allaman/emoji.nvim", "saghen/blink.compat" },
-    opts = {
-      sources = {
-        default = { "emoji" },
-        providers = {
-          emoji = {
-            name = "emoji",
-            module = "blink.compat.source",
-            -- overwrite kind of suggestion
-            transform_items = function(ctx, items)
-              local kind = require("blink.cmp.types").CompletionItemKind.Text
-              for i = 1, #items do
-                items[i].kind = kind
-              end
-              return items
-            end,
-          },
-        },
-      },
-    },
-  },
-
-  {
-    "MagicDuck/grug-far.nvim",
-    cmd = "GrugFar",
-    opts = {},
-    keys = {
-      -- stylua: ignore start
-      { "<leader>R", "", desc = "Search & Replace" },
-      { "<leader>RG", "<cmd>GrugFar<cr>", desc = "Open" },
-      { "<leader>Rg", "<cmd>lua require('grug-far').open({ prefills = { paths = vim.fn.expand('%') } })<cr>", desc = "Open (Limit to current file)"},
-      { "<leader>Rw", "<cmd>lua require('grug-far').open({ prefills = { search = vim.fn.expand('<cword>') } })<cr>", desc = "Search word under cursor", },
-      { "<leader>Rs", mode = "v", "<cmd>lua require('grug-far').with_visual_selection({ prefills = { paths = vim.fn.expand('%') } })<cr>", desc = "Search selection", },
-      -- stylua: ignore end
-    },
-  },
-
-  {
-    "echasnovski/mini.align",
-    keys = {
-      { "ga", mode = { "v" }, desc = "Align" },
-      { "gA", mode = { "v" }, desc = "Align with Preview" },
-    },
+    "folke/todo-comments.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
     opts = {},
   },
 }

@@ -1,16 +1,17 @@
 return {
-
-  { "ellisonleao/gruvbox.nvim" },
-  { "nvim-lua/plenary.nvim", lazy = true },
   { "MunifTanjim/nui.nvim", lazy = true },
+  { "nvim-lua/plenary.nvim", lazy = true },
+
+  {
+    "Bekaboo/dropbar.nvim",
+    event = { "BufReadPost", "BufNewFile" },
+  },
 
   {
     "echasnovski/mini.icons",
     lazy = true,
     opts = {},
     init = function()
-      -- From https://github.com/LazyVim/LazyVim/blob/5115b585e7df4cedb519734ffc380b7e48a366f1/lua/lazyvim/util/mini.lua
-      -- From https://github.com/LazyVim/LazyVim/blob/d35a3914bfc0c7c1000184585217d58a81f5da1a/lua/lazyvim/plugins/ui.lua#L310
       package.preload["nvim-web-devicons"] = function()
         require("mini.icons").mock_nvim_web_devicons()
         return package.loaded["nvim-web-devicons"]
@@ -19,57 +20,75 @@ return {
   },
 
   {
-    "Bekaboo/dropbar.nvim",
-    event = { "BufReadPost", "BufNewFile" },
-  },
-
-  {
     "folke/noice.nvim",
     event = "VeryLazy",
-    -- dependencies = {
-    --   { "rcarriga/nvim-notify" },
-    -- },
-    keys = {
-      { "<leader>n", "", desc = "Noice" },
-      { "<leader>nn", "<cmd>Noice all<cr>", desc = "Open Noice" },
-    },
     opts = {
-      cmdline = {
-        view = "cmdline", -- classic cmdline at the botton
-      },
       lsp = {
-        -- override markdown rendering so that **cmp** and other plugins use **Treesitter**
         override = {
           ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
           ["vim.lsp.util.stylize_markdown"] = true,
-          -- ["cmp.entry.get_documentation"] = true, -- requires hrsh7th/nvim-cmp
+          ["cmp.entry.get_documentation"] = true,
+        },
+      },
+      routes = {
+        {
+          filter = {
+            event = "msg_show",
+            any = {
+              { find = "%d+L, %d+B" },
+              { find = "; after #%d+" },
+              { find = "; before #%d+" },
+            },
+          },
+          view = "mini",
         },
       },
       presets = {
-        bottom_search = true, -- use a classic bottom cmdline for search
-        long_message_to_split = true, -- long messages will be sent to a split
-        lsp_doc_border = true, -- add a border to hover docs and signature help
+        bottom_search = true,
+        command_palette = true,
+        long_message_to_split = true,
+        inc_rename = false,
+        lsp_doc_border = false,
       },
     },
+    dependencies = {
+      { "MunifTanjim/nui.nvim" },
+      { "rcarriga/nvim-notify" },
+      { "folke/which-key.nvim" },
+    },
+    -- stylua: ignore
+    keys = {
+      { "<leader>sn", "", desc = "+noice"},
+      { "<S-Enter>", function() require("noice").redirect(vim.fn.getcmdline()) end, mode = "c", desc = "Redirect Cmdline" },
+      { "<leader>snl", function() require("noice").cmd("last") end, desc = "Noice Last Message" },
+      { "<leader>snh", function() require("noice").cmd("history") end, desc = "Noice History" },
+      { "<leader>sna", function() require("noice").cmd("all") end, desc = "Noice All" },
+      { "<leader>snd", function() require("noice").cmd("dismiss") end, desc = "Dismiss All" },
+      { "<leader>snt", function() require("noice").cmd("pick") end, desc = "Noice Picker (Telescope/FzfLua)" },
+      { "<c-f>", function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end, silent = true, expr = true, desc = "Scroll Forward", mode = {"i", "n", "s"} },
+      { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll Backward", mode = {"i", "n", "s"}},
+    },
+    config = function(_, opts)
+      -- HACK: noice shows messages from before it was enabled,
+      -- but this is not ideal when Lazy is installing plugins,
+      -- so clear the messages in this case.
+      if vim.o.filetype == "lazy" then
+        vim.cmd([[messages clear]])
+      end
+      require("noice").setup(opts)
+    end,
   },
 
   {
     "catgoose/nvim-colorizer.lua",
-    cmd = "ColorizerToggle",
-    keys = {
-      { "<leader>ux", "<cmd>ColorizerToggle<cr>", desc = "Colorizer" },
-    },
+    event = "BufReadPre",
     opts = {},
   },
 
   {
     "folke/tokyonight.nvim",
-    priority = 1000,
     lazy = false,
-    config = function(_, opts)
-      require("tokyonight")
-      vim.cmd("colorscheme tokyonight")
-    end,
+    priority = 1000,
+    opts = {},
   },
 }
-
