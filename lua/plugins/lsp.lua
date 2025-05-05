@@ -77,7 +77,6 @@ local servers = {
   marksman = {},
   pyright = {},
   terraformls = {},
-  tinymist = {},
   yamlls = {
     capabilities = {
       textDocument = {
@@ -96,7 +95,7 @@ local servers = {
         },
         format = { enabled = false },
         -- enabling this conflicts between Kubernetes resources, kustomization.yaml, and Helmreleases
-        validate = false,
+        validate = true,
         schemas = {
           kubernetes = "*.yaml",
           ["http://json.schemastore.org/github-workflow"] = ".github/workflows/*",
@@ -161,12 +160,7 @@ return {
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = desc })
           end
 
-          map("<leader>ld", "<cmd>FzfLua lsp_definitions<cr>", "Definition")
-          map("<leader>lr", "<cmd>FzfLua lsp_references<cr>", "References")
-          map("<leader>lI", "<cmd>FzfLua lsp_implementations<cr>", "Implementation")
           map("<leader>lk", vim.lsp.buf.hover, "Hover")
-          map("<leader>lt", "<cmd>FzfLua lsp_typedefs<cr>", "Type Definition")
-          map("<leader>ls", "<cmd>FzfLua lsp_document_symbols<cr>", "Document Symbols")
           map("<leader>lR", vim.lsp.buf.rename, "Rename")
           map("<leader>la", vim.lsp.buf.code_action, "Code Action", { "n", "x" })
           map("<leader>lD", vim.lsp.buf.declaration, "Declaration")
