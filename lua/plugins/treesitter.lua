@@ -1,51 +1,60 @@
 return {
-  "nvim-treesitter/nvim-treesitter",
-  build = ":TSUpdate",
-  event = { "BufReadPost", "BufNewFile" },
-  dependencies = {
-    -- "RRethy/nvim-treesitter-endwise",
-    -- "mfussenegger/nvim-ts-hint-textobject",
-    -- "windwp/nvim-ts-autotag",
-  },
-  config = function()
-    ---@type TSConfig
-    ---@diagnostic disable-next-line: missing-fields
-    require("nvim-treesitter.configs").setup({
+  {
+    "nvim-treesitter/nvim-treesitter",
+    lazy = false,
+    build = ":TSUpdate",
+    opts = {
+      auto_install = true,
+      highlight = { enable = true },
+      indent = { enable = true },
       ensure_installed = {
         "bash",
-        "cmake",
-        "css",
+        "c",
+        "diff",
         "dockerfile",
         "go",
         "hcl",
         "html",
-        "java",
         "javascript",
+        "jsdoc",
         "json",
         "jsonc",
-        "kotlin",
-        "ledger",
         "lua",
+        "luadoc",
+        "luap",
         "markdown",
         "markdown_inline",
-        "query",
+        "printf",
         "python",
+        "query",
         "regex",
         "terraform",
         "toml",
+        "tsx",
+        "typescript",
         "vim",
+        "vimdoc",
+        "xml",
         "yaml",
       },
-      highlight = {
+      incremental_selection = {
         enable = true,
+        keymaps = {
+          init_selection = "<C-space>",
+          node_incremental = "<C-space>",
+          scope_incremental = false,
+          node_decremental = "<bs>",
+        },
       },
-      -- endwise = {
-      --   enable = true,
-      -- },
-      indent = { enable = true },
-      autopairs = { enable = true },
-    })
-
-    -- require("nvim-ts-autotag").setup()
-  end,
+      textobjects = {
+        move = {
+          enable = true,
+          goto_next_start = { ["]f"] = "@function.outer", ["]c"] = "@class.outer", ["]a"] = "@parameter.inner" },
+          goto_next_end = { ["]F"] = "@function.outer", ["]C"] = "@class.outer", ["]A"] = "@parameter.inner" },
+          goto_previous_start = { ["[f"] = "@function.outer", ["[c"] = "@class.outer", ["[a"] = "@parameter.inner" },
+          goto_previous_end = { ["[F"] = "@function.outer", ["[C"] = "@class.outer", ["[A"] = "@parameter.inner" },
+        },
+      },
+    },
+  },
 }

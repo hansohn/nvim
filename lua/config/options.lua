@@ -3,4 +3,3 @@
 -- Add any additional options here
 
 vim.g.python3_host_prog = "~/.pyenv/versions/py3nvim/bin/python"
-vim.g.lazyvim_picker = "fzf"
