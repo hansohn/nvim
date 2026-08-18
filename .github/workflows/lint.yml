@@ -60,4 +60,12 @@ jobs:
           mkdir -p "$XDG_CONFIG_HOME"
           ln -s "$GITHUB_WORKSPACE" "$XDG_CONFIG_HOME/nvim"
           nvim --headless "+Lazy! sync" +qa
-          nvim --headless -c 'echo "loaded ok"' -c qa
+          # Neovim exits 0 even when the config throws, so the exit status
+          # proves nothing. A startup error only surfaces on stderr.
+          err=$(nvim --headless -c qa 2>&1 >/dev/null)
+          if [ -n "$err" ]; then
+            echo "Neovim reported errors while loading the config:"
+            echo "$err"
+            exit 1
+          fi
+          echo "loaded ok"
