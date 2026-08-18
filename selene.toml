@@ -8,3 +8,5 @@ std = "vim"
 
 [lints]
 mixed_table = "allow"
+# one-line closures in plugin specs are idiomatic LazyVim
+multiple_statements = "allow"

@@ -5,7 +5,7 @@
     <!-- Github Tag -->
     <a href="https://github.com/hansohn/nvim/tags/"><img src="https://img.shields.io/github/v/tag/hansohn/nvim?style=for-the-badge&sort=semver"></a>
     <!-- License -->
-    <a href="https://github.com/hansohn/nvim/blob/main/LICENSE"><img src="https://img.shields.io/github/license/hansohn/nvim.svg?style=for-the-badge"></a>
+    <a href="https://github.com/hansohn/nvim/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/hansohn/nvim.svg?style=for-the-badge"></a>
   </p>
 </div>
 
