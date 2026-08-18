@@ -2,6 +2,8 @@
   <h1>nvim</h1>
   <p>Neovim configuration built on LazyVim for infrastructure and platform engineering</p>
   <p>
+    <!-- Build Status -->
+    <a href="https://github.com/hansohn/nvim/actions/workflows/lint.yml"><img src="https://img.shields.io/github/actions/workflow/status/hansohn/nvim/lint.yml?style=for-the-badge"></a>
     <!-- Github Tag -->
     <a href="https://github.com/hansohn/nvim/tags/"><img src="https://img.shields.io/github/v/tag/hansohn/nvim?style=for-the-badge&sort=semver"></a>
     <!-- License -->
