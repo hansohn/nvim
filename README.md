@@ -2,6 +2,8 @@
   <h1>nvim</h1>
   <p>Neovim configuration built on LazyVim for infrastructure and platform engineering</p>
   <p>
+    <!-- Build Status -->
+    <a href="https://github.com/hansohn/nvim/actions/workflows/lint.yml"><img src="https://img.shields.io/github/actions/workflow/status/hansohn/nvim/lint.yml?style=for-the-badge"></a>
     <!-- Github Tag -->
     <a href="https://github.com/hansohn/nvim/tags/"><img src="https://img.shields.io/github/v/tag/hansohn/nvim?style=for-the-badge&sort=semver"></a>
     <!-- License -->
@@ -52,3 +54,27 @@ $ git clone https://github.com/hansohn/nvim.git ~/.config/nvim
 # start neovim; lazy.nvim bootstraps itself and installs plugins
 $ nvim
 ```
+
+Maintenance
+-----------
+
+The `Makefile` wraps the checks CI runs, plus the headless commands that are
+easy to get wrong:
+
+```bash
+$ make validate       # everything CI runs: selene, stylua, and a clean load
+$ make lint/format    # reformat lua in place
+$ make lazy/sync      # update plugins and refresh the lockfile
+$ make lazy/lock      # re-pin every plugin to its current commit
+$ make mason/install  # install the tools listed in ensure_installed
+$ make clean          # delete plugin and tool state, for a fresh-clone test
+```
+
+Running `make` on its own prints the full target list.
+
+Two things the targets get right that a hand-typed command usually doesn't.
+`lazy/sync` and `mason/install` wait for mason to go idle before quitting —
+a bare `nvim --headless ... +qa` aborts downloads mid-flight, which is how a
+package like `delve` ends up half-installed. And `validate` checks stderr
+rather than the exit status, because Neovim exits `0` even when the config
+throws on startup.

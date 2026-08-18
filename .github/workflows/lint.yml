@@ -5,7 +5,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '*'
+      # '*' stops at '/', so it never matches branches like 'chore/thing'.
+      - '**'
     tags:
       - 'v?[0-9]+.[0-9]+.[0-9]+'
   pull_request:
@@ -60,4 +61,18 @@ jobs:
           mkdir -p "$XDG_CONFIG_HOME"
           ln -s "$GITHUB_WORKSPACE" "$XDG_CONFIG_HOME/nvim"
           nvim --headless "+Lazy! sync" +qa
-          nvim --headless -c 'echo "loaded ok"' -c qa
+          # Neovim exits 0 even when the config throws, so the exit status
+          # proves nothing. A startup error only surfaces on stderr.
+          #
+          # mason auto-installs ensure_installed at startup and prints an abort
+          # notice when quitting cancels it. That is teardown noise, not a
+          # config error -- real startup errors are emitted before it, so drop
+          # everything from the notice onward.
+          err=$(nvim --headless -c qa 2>&1 >/dev/null \
+            | sed '/packages are still installing/,$d')
+          if [ -n "$err" ]; then
+            echo "Neovim reported errors while loading the config:"
+            echo "$err"
+            exit 1
+          fi
+          echo "loaded ok"
