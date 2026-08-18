@@ -112,11 +112,13 @@ mason/list: nvim/require
 # Mirrors the 'load' job in .github/workflows/lint.yml: a config is only useful
 # if neovim can actually start with it. Note that neovim exits 0 even when the
 # config throws, so the exit status proves nothing -- a startup error only shows
-# up on stderr, which is what this checks.
+# up on stderr, which is what this checks. mason's abort notice is teardown
+# noise rather than a config error, and real errors are emitted before it, so
+# everything from that notice onward is dropped.
 ## Load the config headlessly and fail if it errors
 validate/load: nvim/require
 	@echo "[INFO] Loading the config headlessly."
-	@err="$$($(NVIM) --headless -c 'qa' 2>&1 >/dev/null)"; \
+	@err="$$($(NVIM) --headless -c 'qa' 2>&1 >/dev/null | sed '/packages are still installing/,$$d')"; \
 	  if [ -n "$$err" ]; then \
 	    echo "[ERROR] Neovim reported errors while loading the config:"; \
 	    echo "$$err" | sed 's/^/         /'; \

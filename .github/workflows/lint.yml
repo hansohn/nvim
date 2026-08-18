@@ -63,7 +63,13 @@ jobs:
           nvim --headless "+Lazy! sync" +qa
           # Neovim exits 0 even when the config throws, so the exit status
           # proves nothing. A startup error only surfaces on stderr.
-          err=$(nvim --headless -c qa 2>&1 >/dev/null)
+          #
+          # mason auto-installs ensure_installed at startup and prints an abort
+          # notice when quitting cancels it. That is teardown noise, not a
+          # config error -- real startup errors are emitted before it, so drop
+          # everything from the notice onward.
+          err=$(nvim --headless -c qa 2>&1 >/dev/null \
+            | sed '/packages are still installing/,$d')
           if [ -n "$err" ]; then
             echo "Neovim reported errors while loading the config:"
             echo "$err"
