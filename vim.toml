@@ -19,3 +19,13 @@ any = true
 
 [[before_each.args]]
 type = "function"
+
+# globals LazyVim injects at runtime
+[LazyVim]
+any = true
+
+[Snacks]
+any = true
+
+[nvim_bufferline]
+any = true

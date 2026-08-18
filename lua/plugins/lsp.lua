@@ -3,8 +3,8 @@ return {
     -- nvim-lspconfig
     "neovim/nvim-lspconfig",
     dependencies = {
-      { "mason-org/mason.nvim", version = "^1.0.0" },
-      { "mason-org/mason-lspconfig.nvim", version = "^1.0.0", config = function() end },
+      { "mason-org/mason.nvim", version = ">=2.0" },
+      { "mason-org/mason-lspconfig.nvim", version = ">=2.0", config = function() end },
     },
     opts = function()
       ---@class PluginLspOpts
@@ -45,15 +45,20 @@ return {
         codelens = {
           enabled = false,
         },
-        -- add any global capabilities here
-        capabilities = {
-          workspace = {
-            fileOperations = {
-              didRename = true,
-              willRename = true,
-            },
-          },
+        -- Enable LSP-based code folding on Neovim >= 0.10.0
+        -- Requires LSP server to support textDocument/foldingRange
+        folds = {
+          enabled = true,
         },
+        -- -- add any global capabilities here
+        -- capabilities = {
+        --   workspace = {
+        --     fileOperations = {
+        --       didRename = true,
+        --       willRename = true,
+        --     },
+        --   },
+        -- },
         -- options for vim.lsp.buf.format
         -- `bufnr` and `filter` is handled by the LazyVim formatter,
         -- but can be also overridden when specified
@@ -64,6 +69,16 @@ return {
         -- LSP Server Settings
         ---@type lspconfig.options
         servers = {
+          ["*"] = {
+            capabilities = {
+              workspace = {
+                fileOperations = {
+                  didRename = true,
+                  willRename = true,
+                },
+              },
+            },
+          },
           ansiblels = {
             settings = {
               ansible = {
@@ -160,7 +175,7 @@ return {
   -- mason.nvim
   {
     "mason-org/mason.nvim",
-    version = "^1.0.0",
+    version = ">=2.0",
     opts = {
       ensure_installed = {
         "debugpy",
@@ -180,9 +195,9 @@ return {
   -- mason-lspconfig.nvim
   {
     "mason-org/mason-lspconfig.nvim",
-    version = "^1.0.0",
+    version = ">=2.0",
     dependencies = {
-      { "mason-org/mason.nvim", version = "^1.0.0", opts = {} },
+      { "mason-org/mason.nvim", version = ">=2.0", opts = {} },
       "neovim/nvim-lspconfig",
     },
     opts = {

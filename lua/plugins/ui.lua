@@ -17,7 +17,9 @@ return {
     },
     opts = {
       options = {
-        numbers = "buffer_id",
+        numbers = function(opts)
+          return string.format("%s·%s", opts.raise(opts.id), opts.lower(opts.ordinal))
+        end,
         -- stylua: ignore
         close_command = function(n) Snacks.bufdelete(n) end,
         -- stylua: ignore
@@ -247,7 +249,7 @@ return {
   },
   -- mini.icons
   {
-    "echasnovski/mini.icons",
+    "nvim-mini/mini.icons",
     opts = {
       file = {
         [".keep"] = { glyph = "󰊢", hl = "MiniIconsGrey" },

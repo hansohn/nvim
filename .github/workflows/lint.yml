@@ -1,0 +1,63 @@
+---
+name: lint
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '*'
+    tags:
+      - 'v?[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+jobs:
+  stylua:
+    name: stylua
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Check formatting
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --check .
+
+  selene:
+    name: selene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Install selene
+        run: |
+          cargo install selene --locked
+      - name: Lint lua
+        run: selene .
+
+  # The config is only useful if neovim can actually load it. lazy.nvim
+  # bootstraps on first run, so this also proves a clean clone works.
+  load:
+    name: neovim loads the config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Install neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+      - name: Start headless and quit
+        env:
+          XDG_CONFIG_HOME: ${{ github.workspace }}/.xdg
+        run: |
+          mkdir -p "$XDG_CONFIG_HOME"
+          ln -s "$GITHUB_WORKSPACE" "$XDG_CONFIG_HOME/nvim"
+          nvim --headless "+Lazy! sync" +qa
+          nvim --headless -c 'echo "loaded ok"' -c qa
