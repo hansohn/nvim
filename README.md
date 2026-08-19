@@ -22,9 +22,12 @@ What's Included
 
 | Area | Provided by |
 |---|---|
-| Infrastructure | `ansible`, `terraform`, `docker`, `helm`, `yaml` |
-| Languages | `go`, `python`, `rust`, `json`, `markdown`, `toml` |
-| Tooling | `git`, plus `mason` for LSP, DAP and linter installation |
+| Infrastructure | `ansible`, `terraform`, `docker`, `helm`, `yaml`, `rego` |
+| Languages | `go`, `python`, `rust`, `java`, `kotlin`, `json`, `toml`, `markdown` |
+| Templating | Jinja, with `.j2` mapped onto the `jinja` filetype for Ansible templates |
+| Debug and test | `dap.core`, with adapters for Go, Python and Rust; `test.core` for neotest |
+| Navigation | `git`, `harpoon2` for jumping between files, `octo` for reviewing pull requests |
+| Tooling | `mason`, which installs the language servers, debug adapters and linters |
 
 Enabled through LazyVim extras, recorded in `lazyvim.json`.
 
@@ -34,12 +37,12 @@ Copilot, Copilot Chat and Claude Code, via the `lazyvim.plugins.extras.ai.*` ext
 
 ### Customization
 
-Local overrides live in [`lua/plugins/`](lua/plugins), one file per area — `colorscheme`, `editor`, `linting`, `lsp`, `treesitter`, `ui`, `util`. The files under [`lua/config/`](lua/config) are LazyVim's own entry points and are deliberately near-empty; `options.lua` carries only the Python provider path.
+Local overrides live in [`lua/plugins/`](lua/plugins), one file per area — `colorscheme`, `editor`, `linting`, `lsp`, `treesitter`, `ui`, `util`. The files under [`lua/config/`](lua/config) are LazyVim's own entry points and are deliberately near-empty; `options.lua` carries the Python provider path and the `.j2` filetype mapping.
 
 Prerequisites
 -------------
 
-[Neovim](https://neovim.io) 0.10.0 or later, plus `git`, a C compiler for treesitter, and a [Nerd Font](https://www.nerdfonts.com) for icons. On macOS these come from [hansohn/mac-setup](https://github.com/hansohn/mac-setup), which installs Neovim, the Lua toolchain and Hack Nerd Font.
+[Neovim](https://neovim.io) 0.11.2 or later — LazyVim's health check errors below that — plus `git`, `ripgrep`, `fd`, `fzf`, `curl` and `lazygit`, a C compiler for treesitter, and a [Nerd Font](https://www.nerdfonts.com) for icons. On macOS all of these come from [hansohn/mac-setup](https://github.com/hansohn/mac-setup), which installs Neovim, the Lua toolchain and Hack Nerd Font.
 
 Installation
 ------------
