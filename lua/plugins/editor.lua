@@ -64,4 +64,27 @@ return {
     dependencies = { "nvim-lua/plenary.nvim" },
     opts = {},
   },
+  {
+    -- gitsigns covers hunks in the current buffer; this covers whole branches
+    -- and three-way merges, which reviewing pull requests needs.
+    "sindrets/diffview.nvim",
+    cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory", "DiffviewToggleFiles" },
+    opts = {
+      enhanced_diff_hl = true,
+    },
+    keys = {
+      {
+        "<leader>gv",
+        function()
+          if require("diffview.lib").get_current_view() then
+            vim.cmd("DiffviewClose")
+          else
+            vim.cmd("DiffviewOpen")
+          end
+        end,
+        desc = "Diffview (toggle)",
+      },
+      { "<leader>gV", "<cmd>DiffviewFileHistory %<cr>", desc = "Diffview (file history)" },
+    },
+  },
 }
