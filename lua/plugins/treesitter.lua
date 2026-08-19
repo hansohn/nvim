@@ -16,6 +16,7 @@ return {
         "hcl",
         "html",
         "javascript",
+        "jinja",
         "jsdoc",
         "json",
         "jsonc",

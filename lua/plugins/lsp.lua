@@ -93,6 +93,9 @@ return {
           },
           bashls = {},
           dockerls = {},
+          jinja_lsp = {
+            filetypes = { "jinja", "jinja.html", "jinja.yaml" },
+          },
           lua_ls = {
             settings = {
               Lua = {
@@ -183,6 +186,7 @@ return {
         "golangci-lint-langserver",
         "golangci-lint",
         "helm-ls",
+        "jinja-lsp",
         "json-lsp",
         "jsonlint",
         "kube-linter",
