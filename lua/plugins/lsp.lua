@@ -6,7 +6,7 @@ return {
       { "mason-org/mason.nvim", version = ">=2.0" },
       { "mason-org/mason-lspconfig.nvim", version = ">=2.0", config = function() end },
     },
-    opts = function()
+    opts = function(_, base)
       ---@class PluginLspOpts
       local ret = {
         -- options for vim.diagnostic.config()
@@ -169,7 +169,10 @@ return {
           -- ["*"] = function(server, opts) end,
         },
       }
-      return ret
+      -- lazy.nvim replaces the accumulated opts with whatever this function
+      -- returns, so returning `ret` alone would discard every server the
+      -- enabled extras contribute. Merge on top of them instead.
+      return vim.tbl_deep_extend("force", base or {}, ret)
     end,
   },
   -- mason.nvim
@@ -199,9 +202,6 @@ return {
     dependencies = {
       { "mason-org/mason.nvim", version = ">=2.0", opts = {} },
       "neovim/nvim-lspconfig",
-    },
-    opts = {
-      automatic_installation = true,
     },
   },
 }
