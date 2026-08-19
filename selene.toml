@@ -1,12 +1,10 @@
+# `lua54+vim` does not resolve -- selene cannot find the lua54 library -- so the
+# vim standard library is used on its own.
 # https://github.com/Kampfkarren/selene/issues/284
-# std = "lua54+vim"
-#
-#[rules]
-#mixed_table = "allow"
-#
 std = "vim"
 
 [lints]
+# lazy.nvim plugin specs mix array and hash entries in a single table
 mixed_table = "allow"
 # one-line closures in plugin specs are idiomatic LazyVim
 multiple_statements = "allow"
